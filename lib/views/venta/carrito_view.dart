@@ -4,6 +4,7 @@ import 'package:ecommerce_movil/services/venta/carrito_service.dart';
 import 'package:ecommerce_movil/models/venta/carrito_model.dart';
 import 'package:ecommerce_movil/widgets/cantidad_dialog.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ecommerce_movil/views/venta/checkout_view.dart';
 
 class CarritoView extends StatefulWidget {
   const CarritoView({Key? key}) : super(key: key);
@@ -666,7 +667,15 @@ class _CarritoViewState extends State<CarritoView> {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       // Navegar al checkout
-                      // Navigator.push(context, MaterialPageRoute(builder: (context) => CheckoutView()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CheckoutView(
+                            total: carrito.total,
+                            carritoId: carrito.carritoId,
+                          ),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
