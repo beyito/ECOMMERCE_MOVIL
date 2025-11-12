@@ -1,6 +1,6 @@
 // views/products_page.dart
 import 'package:flutter/material.dart';
-import 'package:ecommerce_movil/services/Producto/producto_service.dart';
+import 'package:ecommerce_movil/services/producto/producto_service.dart';
 import 'package:ecommerce_movil/models/producto/producto_model.dart';
 import './detalle_producto_view.dart';
 

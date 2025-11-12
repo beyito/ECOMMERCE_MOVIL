@@ -14,7 +14,14 @@ class CustomBottomNavigation extends StatelessWidget {
     List<BottomNavigationBarItem> items = [
       BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
       BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Categorias'),
-      BottomNavigationBarItem(icon: Icon(Icons.apartment), label: 'Carrito'),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.shopping_cart),
+        label: 'Carrito',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.shopping_bag),
+        label: 'Pedidos',
+      ), // 👈 Nuevo
     ];
 
     return BottomNavigationBar(

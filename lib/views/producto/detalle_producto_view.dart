@@ -1,9 +1,12 @@
 // views/pagina_detalle_producto.dart
 import 'package:ecommerce_movil/models/producto/producto_model.dart';
 import 'package:flutter/material.dart';
-import 'package:ecommerce_movil/services/Producto/producto_service.dart';
+import 'package:ecommerce_movil/services/producto/producto_service.dart';
 import 'package:ecommerce_movil/services/venta/carrito_service.dart';
 import 'package:ecommerce_movil/widgets/cantidad_dialog.dart';
+import 'package:ecommerce_movil/models/producto/historial_precio_model.dart';
+import 'package:ecommerce_movil/services/producto/historial_precio_service.dart';
+import 'package:ecommerce_movil/widgets/grafica_historial_precios.dart';
 
 class DetalleProductoView extends StatefulWidget {
   final int idProducto;
@@ -24,6 +27,7 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
   @override
   void initState() {
     super.initState();
+
     _futuroDetalleProducto = _servicioProductos.obtenerDetalleProducto(
       widget.idProducto,
     );
@@ -200,6 +204,8 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
 
           // Descripción
           _construirDescripcion(producto),
+          // ✅ AQUÍ PEGA LA NUEVA SECCIÓN DEL HISTORIAL DE PRECIOS
+          _construirSeccionHistorialPrecios(producto),
         ],
       ),
     );
@@ -397,6 +403,40 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
           ],
         ),
       ),
+    );
+  }
+
+  // En tu DetalleProductoView, agrega esto después de la descripción:
+  Widget _construirSeccionHistorialPrecios(Producto producto) {
+    return FutureBuilder<HistorialPrecioResponse>(
+      future: HistorialPrecioService().obtenerHistorialPrecios(
+        productoId: producto.id,
+        meses: 12,
+        tipo: 'ambos',
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: const Text(
+              'No se pudo cargar el historial de precios',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        } else if (snapshot.hasData) {
+          // ✅ CORRECCIÓN: Acceder a snapshot.data!.values (no snapshot.data!.values)
+          final response = snapshot.data!;
+          if (response.values.datosGrafica.labels.isNotEmpty) {
+            return GraficaHistorialPrecios(historialData: response.values);
+          } else {
+            return const SizedBox(); // No mostrar si no hay datos
+          }
+        } else {
+          return const SizedBox();
+        }
+      },
     );
   }
 

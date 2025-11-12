@@ -56,7 +56,7 @@ final appRouter = GoRouter(
   // 🔹 Redirección global según login y rol
   redirect: (context, state) async {
     final loggedIn = await isLoggedIn();
-    final loggingIn = state.location == '/login';
+    final loggingIn = state.uri.toString() == '/login';
 
     if (!loggedIn && !loggingIn) {
       return '/login';
