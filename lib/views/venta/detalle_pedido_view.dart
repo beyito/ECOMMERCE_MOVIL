@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:ecommerce_movil/services/venta/pedido_service.dart';
 import 'package:ecommerce_movil/models/venta/pedido_model.dart';
+import 'package:ecommerce_movil/models/venta/plan_pago_model.dart';
 
 class DetallePedidoView extends StatefulWidget {
   final int pedidoId;
@@ -15,16 +16,19 @@ class DetallePedidoView extends StatefulWidget {
 class _DetallePedidoViewState extends State<DetallePedidoView> {
   final PedidoService _pedidoService = PedidoService();
   late Future<PedidoDetalleResponse> _futuroPedidoDetalle;
+  late Future<PlanPagosResponse> _futuroPlanPagos;
 
   @override
   void initState() {
     super.initState();
     _futuroPedidoDetalle = _pedidoService.obtenerPedido(widget.pedidoId);
+    _futuroPlanPagos = _pedidoService.obtenerPlanPagosPedido(widget.pedidoId);
   }
 
   void _recargarDetalle() {
     setState(() {
       _futuroPedidoDetalle = _pedidoService.obtenerPedido(widget.pedidoId);
+      _futuroPlanPagos = _pedidoService.obtenerPlanPagosPedido(widget.pedidoId);
     });
   }
 
@@ -45,13 +49,13 @@ class _DetallePedidoViewState extends State<DetallePedidoView> {
       ),
       body: FutureBuilder<PedidoDetalleResponse>(
         future: _futuroPedidoDetalle,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+        builder: (context, snapshotPedido) {
+          if (snapshotPedido.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return _construirError(snapshot.error.toString());
-          } else if (snapshot.hasData) {
-            final pedido = snapshot.data!.values;
+          } else if (snapshotPedido.hasError) {
+            return _construirError(snapshotPedido.error.toString());
+          } else if (snapshotPedido.hasData) {
+            final pedido = snapshotPedido.data!.values;
             return _construirDetallePedido(pedido);
           } else {
             return const Center(child: Text('No se pudo cargar el pedido'));
@@ -107,6 +111,27 @@ class _DetallePedidoViewState extends State<DetallePedidoView> {
 
           // Resumen total
           _construirResumenTotal(pedido),
+          const SizedBox(height: 24),
+
+          // Plan de pagos
+          FutureBuilder<PlanPagosResponse>(
+            future: _futuroPlanPagos,
+            builder: (context, snapshotPlanPagos) {
+              if (snapshotPlanPagos.connectionState ==
+                  ConnectionState.waiting) {
+                return _construirPlanPagosCargando();
+              } else if (snapshotPlanPagos.hasError) {
+                return _construirPlanPagosError(
+                  snapshotPlanPagos.error.toString(),
+                );
+              } else if (snapshotPlanPagos.hasData) {
+                final planPagos = snapshotPlanPagos.data!.values.planPagos;
+                return _construirPlanPagos(planPagos);
+              } else {
+                return Container(); // Ocultar si no hay datos
+              }
+            },
+          ),
         ],
       ),
     );
@@ -268,6 +293,172 @@ class _DetallePedidoViewState extends State<DetallePedidoView> {
     );
   }
 
+  // NUEVO: Widget para el plan de pagos
+  Widget _construirPlanPagos(List<CuotaPago> planPagos) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.payment, color: Colors.purple),
+                SizedBox(width: 8),
+                Text(
+                  'Plan de Pagos',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (planPagos.isEmpty)
+              const Center(
+                child: Text(
+                  'No hay plan de pagos disponible',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              ...planPagos.map((cuota) {
+                return _construirItemCuota(cuota);
+              }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _construirItemCuota(CuotaPago cuota) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _getColorFondoEstado(cuota.estado),
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Información de la cuota
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Cuota ${cuota.numeroCuota}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Vence: ${cuota.fechaVencimiento}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+
+          // Monto y estado
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'S/. ${cuota.monto.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _getColorEstado(cuota.estado),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  cuota.estado.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _construirPlanPagosCargando() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.payment, color: Colors.purple),
+                SizedBox(width: 8),
+                Text(
+                  'Plan de Pagos',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _construirPlanPagosError(String error) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.payment, color: Colors.purple),
+                SizedBox(width: 8),
+                Text(
+                  'Plan de Pagos',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: Column(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Error al cargar plan de pagos',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Color _getColorEstado(String estado) {
     switch (estado.toLowerCase()) {
       case 'pagado':
@@ -280,6 +471,21 @@ class _DetallePedidoViewState extends State<DetallePedidoView> {
         return Colors.blue;
       default:
         return Colors.grey;
+    }
+  }
+
+  Color _getColorFondoEstado(String estado) {
+    switch (estado.toLowerCase()) {
+      case 'pagado':
+        return Colors.green[50]!;
+      case 'no pagado':
+        return Colors.red[50]!;
+      case 'pendiente':
+        return Colors.orange[50]!;
+      case 'en proceso':
+        return Colors.blue[50]!;
+      default:
+        return Colors.grey[50]!;
     }
   }
 }

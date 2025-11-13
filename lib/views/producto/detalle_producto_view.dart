@@ -27,7 +27,6 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
   @override
   void initState() {
     super.initState();
-
     _futuroDetalleProducto = _servicioProductos.obtenerDetalleProducto(
       widget.idProducto,
     );
@@ -124,22 +123,10 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         actions: [
-          // Icono del carrito en AppBar
-          FutureBuilder<DetalleProductoResponse>(
-            future: _futuroDetalleProducto,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return IconButton(
-                  onPressed: () {
-                    // Navegar a la página del carrito
-                    // Navigator.push(context, MaterialPageRoute(builder: (context) => CarritoView()));
-                  },
-                  icon: const Icon(Icons.shopping_cart),
-                  tooltip: 'Ver carrito',
-                );
-              }
-              return const SizedBox();
-            },
+          IconButton(
+            onPressed: _recargarProducto,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Actualizar',
           ),
         ],
       ),
@@ -204,7 +191,8 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
 
           // Descripción
           _construirDescripcion(producto),
-          // ✅ AQUÍ PEGA LA NUEVA SECCIÓN DEL HISTORIAL DE PRECIOS
+
+          // Historial de precios
           _construirSeccionHistorialPrecios(producto),
         ],
       ),
@@ -222,19 +210,54 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
       child: producto.imagenesData.isNotEmpty
           ? ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              // child: Image.network(producto.imagenesData[0]['url'], fit: BoxFit.cover),
+              child: Image.network(
+                producto
+                    .imagenesData[0]['url_imagen'], // CORREGIDO: 'url_imagen'
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return _buildImageErrorPlaceholder();
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return _buildImageLoadingPlaceholder();
+                },
+              ),
             )
-          : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.image, size: 80, color: Colors.grey),
-                const SizedBox(height: 8),
-                Text(
-                  'Imagen no disponible',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ],
-            ),
+          : _buildNoImagePlaceholder(),
+    );
+  }
+
+  Widget _buildImageErrorPlaceholder() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.error_outline, size: 60, color: Colors.red),
+        const SizedBox(height: 8),
+        const Text(
+          'Error cargando imagen',
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed: _recargarProducto,
+          child: const Text('Reintentar'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageLoadingPlaceholder() {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  Widget _buildNoImagePlaceholder() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.image, size: 80, color: Colors.grey),
+        const SizedBox(height: 8),
+        Text('Imagen no disponible', style: TextStyle(color: Colors.grey[600])),
+      ],
     );
   }
 
@@ -283,7 +306,7 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
               children: [
                 const Text('Precio contado:', style: TextStyle(fontSize: 16)),
                 Text(
-                  'S/. ${producto.precioContado.toStringAsFixed(2)}',
+                  'Bs. ${producto.precioContado.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -298,7 +321,7 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
               children: [
                 const Text('Precio en cuotas:', style: TextStyle(fontSize: 16)),
                 Text(
-                  'S/. ${producto.precioCuota.toStringAsFixed(2)}',
+                  'Bs. ${producto.precioCuota.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
@@ -406,7 +429,6 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
     );
   }
 
-  // En tu DetalleProductoView, agrega esto después de la descripción:
   Widget _construirSeccionHistorialPrecios(Producto producto) {
     return FutureBuilder<HistorialPrecioResponse>(
       future: HistorialPrecioService().obtenerHistorialPrecios(
@@ -416,17 +438,15 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
       ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Container(
-            padding: const EdgeInsets.all(16),
-            child: const Text(
-              'No se pudo cargar el historial de precios',
-              style: TextStyle(color: Colors.grey),
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
             ),
           );
+        } else if (snapshot.hasError) {
+          return const SizedBox(); // Ocultar si hay error
         } else if (snapshot.hasData) {
-          // ✅ CORRECCIÓN: Acceder a snapshot.data!.values (no snapshot.data!.values)
           final response = snapshot.data!;
           if (response.values.datosGrafica.labels.isNotEmpty) {
             return GraficaHistorialPrecios(historialData: response.values);
@@ -466,6 +486,7 @@ class _DetalleProductoViewState extends State<DetalleProductoView> {
               IconButton(
                 onPressed: () {
                   // Agregar a favoritos
+                  _mostrarMensajeExito(context, 'Agregado a favoritos');
                 },
                 icon: const Icon(Icons.favorite_border, size: 28),
                 color: Colors.grey,

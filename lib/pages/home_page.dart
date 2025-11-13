@@ -10,6 +10,7 @@ import 'package:ecommerce_movil/shared/custom_appbar.dart';
 import 'package:ecommerce_movil/shared/custom_bottom_navigation.dart';
 import 'package:ecommerce_movil/config/config_db.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:ecommerce_movil/views/reporte/reporte_cliente_view.dart';
 
 // Instancia global del plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -49,10 +50,7 @@ class _HomePageState extends State<HomePage> {
           // ReservaCopropietarioView(),
           // AreasComunesView(),
           // PagoView(),
-          Scaffold(
-            appBar: AppBar(title: const Text('Ejemplo de vista')),
-            body: const Center(child: Text('Aquí irá una vista real')),
-          ),
+          ReportesClienteView(),
           CarritoView(),
           PedidosView(),
         ];

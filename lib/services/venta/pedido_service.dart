@@ -5,6 +5,7 @@ import 'package:ecommerce_movil/services/auth_service.dart';
 import 'package:ecommerce_movil/config/config_db.dart';
 import 'package:ecommerce_movil/models/venta/forma_pago_model.dart';
 import 'package:ecommerce_movil/models/venta/pedido_model.dart';
+import 'package:ecommerce_movil/models/venta/plan_pago_model.dart';
 
 class PedidoService {
   final String baseUrl = '${Config.baseUrl}/venta';
@@ -20,7 +21,7 @@ class PedidoService {
         uri,
         headers: {'Authorization': 'Bearer $token'},
       );
-
+      print(respuesta.body);
       if (respuesta.statusCode == 200) {
         final jsonRespuesta = json.decode(respuesta.body);
         return FormaPagoResponse.fromJson(jsonRespuesta);
@@ -98,6 +99,28 @@ class PedidoService {
         return PedidoDetalleResponse.fromJson(jsonRespuesta);
       } else {
         throw Exception('Error al obtener pedido: ${respuesta.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+  // services/venta/pedido_service.dart
+
+  Future<PlanPagosResponse> obtenerPlanPagosPedido(int pedidoId) async {
+    try {
+      final token = await authService.getToken();
+      final uri = Uri.parse('$baseUrl/listar_plan_pagos_pedido/$pedidoId');
+      final response = await http.get(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        return PlanPagosResponse.fromJson(jsonResponse);
+      } else {
+        throw Exception(
+          'Error al obtener plan de pagos: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');

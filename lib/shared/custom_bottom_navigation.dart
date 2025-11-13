@@ -13,7 +13,7 @@ class CustomBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     List<BottomNavigationBarItem> items = [
       BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-      BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Categorias'),
+      BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Reportes'),
       BottomNavigationBarItem(
         icon: Icon(Icons.shopping_cart),
         label: 'Carrito',

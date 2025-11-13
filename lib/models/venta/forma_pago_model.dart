@@ -14,10 +14,10 @@ class FormaPagoResponse {
 
   factory FormaPagoResponse.fromJson(Map<String, dynamic> json) {
     return FormaPagoResponse(
-      status: json['status'],
-      error: json['error'],
-      message: json['message'],
-      values: FormaPagoData.fromJson(json['values']),
+      status: json['status'] ?? 0,
+      error: json['error'] ?? 0,
+      message: json['message'] ?? '',
+      values: FormaPagoData.fromJson(json['values'] ?? {}),
     );
   }
 }
@@ -28,11 +28,18 @@ class FormaPagoData {
   FormaPagoData({required this.formasPago});
 
   factory FormaPagoData.fromJson(Map<String, dynamic> json) {
-    return FormaPagoData(
-      formasPago: (json['Formas Pago'] as List)
-          .map((item) => FormaPago.fromJson(item))
-          .toList(),
-    );
+    // MANEJO SEGURO: Verificar que existe y es una lista
+    final formasPagoJson = json['Formas_Pago'];
+    if (formasPagoJson is List) {
+      return FormaPagoData(
+        formasPago: formasPagoJson
+            .map((item) => FormaPago.fromJson(item))
+            .toList(),
+      );
+    } else {
+      // Si no es una lista válida, retornar lista vacía
+      return FormaPagoData(formasPago: []);
+    }
   }
 }
 
@@ -40,7 +47,7 @@ class FormaPago {
   final int id;
   final String nombre;
   final String descripcion;
-  final bool? isActive; // Opcional por si no viene en la respuesta
+  final bool? isActive;
 
   FormaPago({
     required this.id,
@@ -51,11 +58,21 @@ class FormaPago {
 
   factory FormaPago.fromJson(Map<String, dynamic> json) {
     return FormaPago(
-      id: json['id'],
-      nombre: json['nombre'],
-      descripcion: json['descripcion'],
-      isActive: json['is_active'],
+      id: json['id'] ?? 0,
+      nombre: json['nombre'] ?? '',
+      descripcion: json['descripcion'] ?? '',
+      isActive: json['is_active'] ?? json['isActive'] ?? true,
     );
+  }
+
+  // Método útil para mostrar en UI
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'descripcion': descripcion,
+      'isActive': isActive,
+    };
   }
 }
 
@@ -90,9 +107,9 @@ class PedidoResponse {
 
   factory PedidoResponse.fromJson(Map<String, dynamic> json) {
     return PedidoResponse(
-      status: json['status'],
-      error: json['error'],
-      message: json['message'],
+      status: json['status'] ?? 0,
+      error: json['error'] ?? 0,
+      message: json['message'] ?? '',
       values: json['values'],
     );
   }

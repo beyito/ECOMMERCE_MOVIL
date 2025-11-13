@@ -1,103 +1,3 @@
-// ignore_for_file: non_constant_identifier_names
-
-// class ProductoModel {
-//   final int? id;
-//   final int? subcategoria_id;
-//   final String? subcategoria_nombre;
-//   final int? marca_id;
-//   final String? marca_nombre;
-//   final int? categoria_id;
-//   final String? categoria_nombre;
-//   final String? nombre;
-//   final String? descripcion;
-//   final String? modelo;
-//   final double? precio_contado;
-//   final double? precio_cuota;
-//   final int? stock;
-//   final int? garantia_meses;
-
-//   ProductoModel({
-//     this.id,
-//     this.subcategoria_id,
-//     this.subcategoria_nombre,
-//     this.marca_id,
-//     this.marca_nombre,
-//     this.categoria_id,
-//     this.categoria_nombre,
-//     this.nombre,
-//     this.descripcion,
-//     this.modelo,
-//     this.precio_contado,
-//     this.precio_cuota,
-//     this.stock,
-//     this.garantia_meses,
-//   });
-
-//   factory ProductoModel.fromJson(Map<String, dynamic> json) {
-//     return ProductoModel(
-//       id: json['id'] is int
-//           ? json['id'] as int
-//           : (json['id'] != null ? int.tryParse('${json['id']}') : null),
-//       subcategoria_id: json['subcategoria_id'] is int
-//           ? json['subcategoria_id'] as int
-//           : (json['subcategoria_id'] != null
-//                 ? int.tryParse('${json['subcategoria_id']}')
-//                 : null),
-//       subcategoria_nombre: json['subcategoria_nombre'] as String?,
-//       marca_id: json['marca_id'] is int
-//           ? json['marca_id'] as int
-//           : (json['marca_id'] != null
-//                 ? int.tryParse('${json['marca_id']}')
-//                 : null),
-//       marca_nombre: json['marca_nombre'] as String?,
-//       categoria_id: json['categoria_id'] is int
-//           ? json['categoria_id'] as int
-//           : (json['categoria_id'] != null
-//                 ? int.tryParse('${json['categoria_id']}')
-//                 : null),
-//       categoria_nombre: json['categoria_nombre'] as String?,
-//       nombre: json['nombre'] as String?,
-//       descripcion: json['descripcion'] as String?,
-//       modelo: json['modelo'] as String?,
-//       precio_contado: json['precio_contado'] != null
-//           ? (json['precio_contado'] is num
-//                 ? (json['precio_contado'] as num).toDouble()
-//                 : double.tryParse('${json['precio_contado']}'))
-//           : null,
-//       precio_cuota: json['precio_cuota'] != null
-//           ? (json['precio_cuota'] is num
-//                 ? (json['precio_cuota'] as num).toDouble()
-//                 : double.tryParse('${json['precio_cuota']}'))
-//           : null,
-//       stock: json['stock'] is int
-//           ? json['stock'] as int
-//           : (json['stock'] != null ? int.tryParse('${json['stock']}') : null),
-//       garantia_meses: json['garantia_meses'] is int
-//           ? json['garantia_meses'] as int
-//           : (json['garantia_meses'] != null
-//                 ? int.tryParse('${json['garantia_meses']}')
-//                 : null),
-//     );
-//   }
-
-//   Map<String, dynamic> toJson() => {
-//     'id': id,
-//     'subcategoria_id': subcategoria_id,
-//     'subcategoria_nombre': subcategoria_nombre,
-//     'marca_id': marca_id,
-//     'marca_nombre': marca_nombre,
-//     'categoria_id': categoria_id,
-//     'categoria_nombre': categoria_nombre,
-//     'nombre': nombre,
-//     'descripcion': descripcion,
-//     'modelo': modelo,
-//     'precio_contado': precio_contado,
-//     'precio_cuota': precio_cuota,
-//     'stock': stock,
-//     'garantia_meses': garantia_meses,
-//   };
-// }
-
 // models/product_response.dart
 class ProductoResponse {
   final int status;
@@ -304,5 +204,126 @@ class DetalleProductoValues {
 
   factory DetalleProductoValues.fromJson(Map<String, dynamic> json) {
     return DetalleProductoValues(producto: Producto.fromJson(json['producto']));
+  }
+}
+
+// models/producto/producto_model.dart
+
+class ProductoListResponse {
+  final int status;
+  final int error;
+  final String message;
+  final ProductoListValues valores;
+
+  ProductoListResponse({
+    required this.status,
+    required this.error,
+    required this.message,
+    required this.valores,
+  });
+
+  factory ProductoListResponse.fromJson(Map<String, dynamic> json) {
+    return ProductoListResponse(
+      status: json['status'],
+      error: json['error'],
+      message: json['message'],
+      valores: ProductoListValues.fromJson(json['values']),
+    );
+  }
+}
+
+class ProductoListValues {
+  final List<Producto> productos;
+  final ProductoPagination pagination;
+  final ProductoFiltersApplied filtersApplied;
+
+  ProductoListValues({
+    required this.productos,
+    required this.pagination,
+    required this.filtersApplied,
+  });
+
+  factory ProductoListValues.fromJson(Map<String, dynamic> json) {
+    return ProductoListValues(
+      productos: (json['productos'] as List)
+          .map((producto) => Producto.fromJson(producto))
+          .toList(),
+      pagination: ProductoPagination.fromJson(json['pagination']),
+      filtersApplied: ProductoFiltersApplied.fromJson(json['filters_applied']),
+    );
+  }
+}
+
+class ProductoPagination {
+  final int count;
+  final int totalPages;
+  final int currentPage;
+  final int pageSize;
+  final bool hasNext;
+  final bool hasPrevious;
+  final int? nextPage;
+  final int? previousPage;
+
+  ProductoPagination({
+    required this.count,
+    required this.totalPages,
+    required this.currentPage,
+    required this.pageSize,
+    required this.hasNext,
+    required this.hasPrevious,
+    this.nextPage,
+    this.previousPage,
+  });
+
+  factory ProductoPagination.fromJson(Map<String, dynamic> json) {
+    return ProductoPagination(
+      count: json['count'],
+      totalPages: json['total_pages'],
+      currentPage: json['current_page'],
+      pageSize: json['page_size'],
+      hasNext: json['has_next'],
+      hasPrevious: json['has_previous'],
+      nextPage: json['next_page'],
+      previousPage: json['previous_page'],
+    );
+  }
+}
+
+class ProductoFiltersApplied {
+  final String? search;
+  final String? categoria;
+  final String? subcategoria;
+  final String? marca;
+  final double? minPrecio;
+  final double? maxPrecio;
+  final String? enStock;
+  final bool activos;
+
+  ProductoFiltersApplied({
+    this.search,
+    this.categoria,
+    this.subcategoria,
+    this.marca,
+    this.minPrecio,
+    this.maxPrecio,
+    this.enStock,
+    required this.activos,
+  });
+
+  factory ProductoFiltersApplied.fromJson(Map<String, dynamic> json) {
+    return ProductoFiltersApplied(
+      search: json['search'],
+      categoria: json['categoria'],
+      subcategoria: json['subcategoria'],
+      marca: json['marca'],
+      minPrecio: json['min_precio'] != null
+          ? double.parse(json['min_precio'].toString())
+          : null,
+      maxPrecio: json['max_precio'] != null
+          ? double.parse(json['max_precio'].toString())
+          : null,
+      enStock: json['en_stock'],
+      activos: json['activos'],
+    );
   }
 }

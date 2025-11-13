@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:ecommerce_movil/models/auth/login_response.dart';
 import 'package:ecommerce_movil/models/usuario/usuario_model.dart';
 import 'package:http/http.dart' as http;
@@ -78,5 +79,10 @@ class AuthService {
       return UsuarioModel(username: username);
     }
     return null;
+  }
+
+  Future<int?> getId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('id');
   }
 }

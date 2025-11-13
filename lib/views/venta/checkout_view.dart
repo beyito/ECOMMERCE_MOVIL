@@ -22,6 +22,7 @@ class _CheckoutViewState extends State<CheckoutView> {
   FormaPago? _formaPagoSeleccionada;
   int? _mesesCreditoSeleccionado;
   bool _procesandoPedido = false;
+  bool _cargandoFormasPago = true;
 
   // Opciones de meses para crédito
   final List<int> _opcionesMeses = [6, 12];
@@ -29,7 +30,43 @@ class _CheckoutViewState extends State<CheckoutView> {
   @override
   void initState() {
     super.initState();
-    _futuroFormasPago = _pedidoService.listarFormasPagoActivos();
+    _futuroFormasPago = _cargarFormasPago();
+  }
+
+  Future<FormaPagoResponse> _cargarFormasPago() async {
+    try {
+      print('🔍 Cargando formas de pago...');
+      final response = await _pedidoService.listarFormasPagoActivos();
+      print('✅ Formas de pago cargadas: ${response.values.formasPago.length}');
+
+      if (response.values.formasPago.isNotEmpty) {
+        print('📋 Formas de pago disponibles:');
+        for (var formaPago in response.values.formasPago) {
+          print('   - ${formaPago.nombre} (ID: ${formaPago.id})');
+        }
+      } else {
+        print('⚠️ No se encontraron formas de pago');
+      }
+
+      setState(() {
+        _formasPago = response.values.formasPago;
+        _cargandoFormasPago = false;
+      });
+      return response;
+    } catch (e) {
+      print('❌ Error cargando formas de pago: $e');
+      setState(() {
+        _cargandoFormasPago = false;
+      });
+      throw e;
+    }
+  }
+
+  void _recargarFormasPago() {
+    setState(() {
+      _cargandoFormasPago = true;
+      _futuroFormasPago = _cargarFormasPago();
+    });
   }
 
   Future<void> _procesarPedido() async {
@@ -63,8 +100,6 @@ class _CheckoutViewState extends State<CheckoutView> {
         // Navegar a confirmación o limpiar carrito
         if (mounted) {
           Navigator.of(context).popUntil((route) => route.isFirst);
-          // Si usas GoRouter:
-          // context.go('/home/0'); // Volver al inicio
         }
       } else {
         _mostrarMensajeError(respuesta.message);
@@ -123,17 +158,14 @@ class _CheckoutViewState extends State<CheckoutView> {
       body: FutureBuilder<FormaPagoResponse>(
         future: _futuroFormasPago,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (_cargandoFormasPago) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return _construirError(snapshot.error.toString());
-          } else if (snapshot.hasData) {
-            _formasPago = snapshot.data!.values.formasPago;
+          } else if (snapshot.hasData || _formasPago.isNotEmpty) {
             return _construirContenido();
           } else {
-            return const Center(
-              child: Text('No se pudieron cargar las formas de pago'),
-            );
+            return _construirSinFormasPago();
           }
         },
       ),
@@ -159,6 +191,37 @@ class _CheckoutViewState extends State<CheckoutView> {
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _recargarFormasPago,
+            child: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _construirSinFormasPago() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.payment, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'No hay formas de pago disponibles',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Por favor, intenta más tarde',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _recargarFormasPago,
+            child: const Text('Reintentar'),
           ),
         ],
       ),
@@ -232,6 +295,25 @@ class _CheckoutViewState extends State<CheckoutView> {
   }
 
   Widget _construirFormasPago() {
+    if (_formasPago.isEmpty) {
+      return Card(
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Icon(Icons.payment, size: 48, color: Colors.grey),
+              const SizedBox(height: 8),
+              const Text(
+                'No hay formas de pago disponibles',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Card(
       elevation: 2,
       child: Padding(

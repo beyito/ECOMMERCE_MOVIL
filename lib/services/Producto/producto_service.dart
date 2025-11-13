@@ -75,4 +75,29 @@ class ProductoService {
       throw Exception('Error de conexión: $e');
     }
   }
+
+  // En producto_service.dart - Agrega este método
+  Future<ProductoListResponse> busquedaNatural({required String query}) async {
+    try {
+      final token = await authService.getToken();
+      final id = await authService.getId();
+      final response = await http.post(
+        Uri.parse('$baseUrl/busqueda-natural'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({'q': query, 'usuario_id': id}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return ProductoListResponse.fromJson(data);
+      } else {
+        throw Exception('Error en búsqueda: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
 }

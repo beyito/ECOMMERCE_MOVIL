@@ -34,8 +34,15 @@ class _GraficaHistorialPreciosState extends State<GraficaHistorialPrecios> {
             _buildHeader(),
             const SizedBox(height: 16),
 
-            // Gráfica
-            SizedBox(height: 300, child: _buildChart(datosGrafica)),
+            // Gráfica con constraints para evitar overflow
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth:
+                    MediaQuery.of(context).size.width -
+                    32, // Considerando el padding
+              ),
+              child: SizedBox(height: 300, child: _buildChart(datosGrafica)),
+            ),
             const SizedBox(height: 16),
 
             // Leyenda
@@ -51,49 +58,57 @@ class _GraficaHistorialPreciosState extends State<GraficaHistorialPrecios> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Historial de Precios',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButton<String>(
-            value: _tipoVisualizacion,
-            underline: const SizedBox(),
-            items: [
-              DropdownMenuItem(
-                value: 'precios',
-                child: Row(
-                  children: [
-                    Icon(Icons.trending_up, size: 16, color: Colors.blue),
-                    const SizedBox(width: 4),
-                    const Text('Precios'),
-                  ],
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButton<String>(
+              value: _tipoVisualizacion,
+              underline: const SizedBox(),
+              isDense: true, // Hacerlo más compacto
+              items: [
+                DropdownMenuItem(
+                  value: 'precios',
+                  child: Row(
+                    mainAxisSize:
+                        MainAxisSize.min, // Evitar que se expanda demasiado
+                    children: [
+                      Icon(Icons.trending_up, size: 16, color: Colors.blue),
+                      const SizedBox(width: 4),
+                      const Text('Precios'),
+                    ],
+                  ),
                 ),
-              ),
-              DropdownMenuItem(
-                value: 'variaciones',
-                child: Row(
-                  children: [
-                    Icon(Icons.percent, size: 16, color: Colors.green),
-                    const SizedBox(width: 4),
-                    const Text('Variaciones %'),
-                  ],
+                DropdownMenuItem(
+                  value: 'variaciones',
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.percent, size: 16, color: Colors.green),
+                      const SizedBox(width: 4),
+                      const Text('Variaciones %'),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-            onChanged: (value) {
-              setState(() {
-                _tipoVisualizacion = value!;
-              });
-            },
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _tipoVisualizacion = value!;
+                });
+              },
+            ),
           ),
         ),
       ],
@@ -101,10 +116,15 @@ class _GraficaHistorialPreciosState extends State<GraficaHistorialPrecios> {
   }
 
   Widget _buildChart(DatosGrafica datosGrafica) {
-    return LineChart(
-      _tipoVisualizacion == 'precios'
-          ? _buildPreciosData(datosGrafica)
-          : _buildVariacionesData(datosGrafica),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+      ), // Padding para evitar desbordamiento
+      child: LineChart(
+        _tipoVisualizacion == 'precios'
+            ? _buildPreciosData(datosGrafica)
+            : _buildVariacionesData(datosGrafica),
+      ),
     );
   }
 
@@ -137,7 +157,7 @@ class _GraficaHistorialPreciosState extends State<GraficaHistorialPrecios> {
               final fecha = datosGrafica.labels[spot.x.toInt()];
               final valor = spot.y;
               return LineTooltipItem(
-                '$fecha\nS/. ${valor.toStringAsFixed(2)}',
+                '$fecha\nBs. ${valor.toStringAsFixed(2)}',
                 const TextStyle(color: Colors.white),
               );
             }).toList();
@@ -154,7 +174,7 @@ class _GraficaHistorialPreciosState extends State<GraficaHistorialPrecios> {
             showTitles: true,
             reservedSize: 40,
             getTitlesWidget: (value, meta) {
-              return Text('S/. ${value.toInt()}');
+              return Text('Bs. ${value.toInt()}');
             },
           ),
         ),
@@ -282,6 +302,9 @@ class _GraficaHistorialPreciosState extends State<GraficaHistorialPrecios> {
     return SideTitles(
       showTitles: true,
       reservedSize: 32,
+      interval: labels.length > 6
+          ? 2
+          : 1, // Mostrar menos etiquetas si hay muchas
       getTitlesWidget: (value, meta) {
         if (value.toInt() >= labels.length) return const Text('');
 
@@ -290,7 +313,12 @@ class _GraficaHistorialPreciosState extends State<GraficaHistorialPrecios> {
 
         return Padding(
           padding: const EdgeInsets.only(top: 8.0),
-          child: Text(fechaFormateada, style: const TextStyle(fontSize: 10)),
+          child: Text(
+            fechaFormateada,
+            style: const TextStyle(fontSize: 10),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         );
       },
     );
@@ -443,15 +471,15 @@ class _GraficaHistorialPreciosState extends State<GraficaHistorialPrecios> {
         children: [
           _buildEstadisticaItem(
             'Máx',
-            'S/. ${stats.precioMaximo.toStringAsFixed(2)}',
+            'Bs. ${stats.precioMaximo.toStringAsFixed(2)}',
           ),
           _buildEstadisticaItem(
             'Mín',
-            'S/. ${stats.precioMinimo.toStringAsFixed(2)}',
+            'Bs. ${stats.precioMinimo.toStringAsFixed(2)}',
           ),
           _buildEstadisticaItem(
             'Prom',
-            'S/. ${stats.precioPromedio.toStringAsFixed(2)}',
+            'Bs. ${stats.precioPromedio.toStringAsFixed(2)}',
           ),
           _buildEstadisticaItem('Cambios', stats.totalCambios.toString()),
         ],
@@ -476,20 +504,24 @@ class _GraficaHistorialPreciosState extends State<GraficaHistorialPrecios> {
             tipo,
             style: TextStyle(fontWeight: FontWeight.bold, color: color),
           ),
-          Row(
-            children: [
-              _buildEstadisticaItem(
-                'Máx',
-                'S/. ${stats.precioMaximo.toStringAsFixed(0)}',
-              ),
-              const SizedBox(width: 12),
-              _buildEstadisticaItem(
-                'Mín',
-                'S/. ${stats.precioMinimo.toStringAsFixed(0)}',
-              ),
-              const SizedBox(width: 12),
-              _buildEstadisticaItem('Cambios', stats.totalCambios.toString()),
-            ],
+          Flexible(
+            // Usar Flexible para evitar overflow
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildEstadisticaItem(
+                  'Máx',
+                  'Bs. ${stats.precioMaximo.toStringAsFixed(0)}',
+                ),
+                const SizedBox(width: 8), // Reducir espacio
+                _buildEstadisticaItem(
+                  'Mín',
+                  'Bs. ${stats.precioMinimo.toStringAsFixed(0)}',
+                ),
+                const SizedBox(width: 8), // Reducir espacio
+                _buildEstadisticaItem('Cambios', stats.totalCambios.toString()),
+              ],
+            ),
           ),
         ],
       ),
